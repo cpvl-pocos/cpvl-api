@@ -1,0 +1,47 @@
+GET http://localhost:3000/pilots/status-list
+
+###
+### Buscar um pagamento mensal por ID
+GET http://localhost:8000/user/15
+Content-Type: application/json
+Accept: application/json
+
+###
+
+### Listar todos os pagamentos mensais
+GET http://localhost:8000/user
+Content-Type: application/json
+Accept: application/json
+
+###
+
+### Criar um novo pilot
+POST http://localhost:8000/userAdd
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userId": 1,
+  "type": "mensal",
+  "ref_year": "2025",
+  "amount": 50.00,
+  "status": "Confirmar"
+}
+
+###
+
+### Atualizar um pagamento mensal
+PATCH http://localhost:8000/user/confirmPayment/28
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "Confirmado"
+}
+
+###
+
+### Excluir um pagamento mensal
+DELETE http://localhost:8000/user/15
+Content-Type: application/json
+Accept: application/json

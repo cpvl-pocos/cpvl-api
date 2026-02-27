@@ -1,0 +1,14 @@
+POST http://localhost:8000/users/addUser
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Teste User2",
+  "cpf": "12345678902",
+  "cellphone": "44999999992",
+  "email": "teste2@teste.com",
+  "password": "123452",
+  "agreeStatute": true,
+  "agreeRI": true,
+  "agreeLGPD": true
+}
