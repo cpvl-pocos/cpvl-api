@@ -17,7 +17,12 @@ export class AppController {
     private readonly configService: ConfigService,
     private readonly userService: AppService,
     private readonly licenseDataService: LicenseDataService,
-  ) {}
+  ) { }
+
+  @Get()
+  getHello(): string {
+    return this.userService.getHello();
+  }
 
   @UseGuards(LocalAuthGuard)
   @Post('login')

@@ -12,9 +12,9 @@ export class AppService {
 
     @InjectModel(Pilot)
     private readonly pilotModel: typeof Pilot,
-  ) {}
+  ) { }
 
   getHello(): string {
-    return 'Hello World!';
+    return 'cpvl-api-production.up.railway.app';
   }
 }
