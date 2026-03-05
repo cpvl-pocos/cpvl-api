@@ -12,5 +12,6 @@ import { MailModule } from '../mail/mail.module';
   ],
   controllers: [PilotsController],
   providers: [PilotsService],
+  exports: [PilotsService],
 })
-export class PilotsModule {}
+export class PilotsModule { }

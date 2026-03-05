@@ -4,7 +4,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { PilotsModule } from 'pilots/pilots.module';
+import { PilotsModule } from './pilots/pilots.module';
 import { UsersModule } from 'users/users.module';
 import { PaymentMonthlyModule } from './payment-monthly/payment-monthly.module';
 import { EmergencyContactsModule } from './emergency-contacts/emergency-contacts.module';
@@ -51,4 +51,4 @@ import LicenseData from './models/licenseData.model';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

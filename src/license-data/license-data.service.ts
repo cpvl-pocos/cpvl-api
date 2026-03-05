@@ -7,7 +7,7 @@ export class LicenseDataService {
   constructor(
     @InjectModel(LicenseData)
     private readonly licenseDataModel: typeof LicenseData,
-  ) {}
+  ) { }
 
   async findByUserId(userId: number): Promise<LicenseData | null> {
     return this.licenseDataModel.findOne({
@@ -38,12 +38,14 @@ export class LicenseDataService {
       where: { userId: data.userId },
     });
 
+    const payload = { ...data, status: 'Confirmar' };
+
     if (existing) {
-      await existing.update(data);
+      await existing.update(payload);
       return existing;
     }
 
-    return this.licenseDataModel.create(data as any);
+    return this.licenseDataModel.create(payload as any);
   }
 
   async delete(userId: number): Promise<{ message: string }> {

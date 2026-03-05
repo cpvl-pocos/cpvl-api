@@ -1,9 +1,11 @@
 import { IsInt, IsNotEmpty, IsString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
+import { TrimOnly } from '../../decorators/sanitize-input.decorator';
 
 export class ConfirmPaymentDto {
   @IsNotEmpty()
   @IsString()
+  @TrimOnly()
   ref_year: string;
 
   @IsNotEmpty()

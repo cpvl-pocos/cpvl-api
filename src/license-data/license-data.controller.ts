@@ -13,11 +13,12 @@ import {
 import { LicenseDataService } from './license-data.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PassportRequest } from '../types';
+import { CreateLicenseDataDto } from './dto/create-license-data.dto';
 
 @Controller('license-data')
 @UseGuards(JwtAuthGuard)
 export class LicenseDataController {
-  constructor(private readonly licenseDataService: LicenseDataService) {}
+  constructor(private readonly licenseDataService: LicenseDataService) { }
 
   @Get('pending')
   async findPending(@Req() req: PassportRequest) {
@@ -38,15 +39,7 @@ export class LicenseDataController {
   async createOrUpdate(
     @Req() req: PassportRequest,
     @Body()
-    body: {
-      userId: number;
-      civl?: string;
-      pilotLevel?: string;
-      cbvlExpiration?: Date;
-      imgCbvl?: string;
-      anacExpiration?: Date;
-      imgAnac?: string;
-    },
+    body: CreateLicenseDataDto,
   ) {
     // Only the user can update their own license data
     if (req.user.id !== body.userId) {

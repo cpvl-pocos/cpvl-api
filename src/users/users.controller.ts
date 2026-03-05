@@ -1,12 +1,13 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { RegisterUserDto } from './dto/register-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post('addUser')
-  async addUser(@Body() userInfo: any) {
+  async addUser(@Body() userInfo: RegisterUserDto) {
     const result = await this.usersService.addUser(userInfo);
     return {
       message: 'Piloto cadastrado com sucesso',

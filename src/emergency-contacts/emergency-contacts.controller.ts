@@ -9,13 +9,14 @@ import {
 } from '@nestjs/common';
 import { EmergencyContactsService } from './emergency-contacts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateEmergencyContactDto } from './dto/create-emergency-contact.dto';
 
 @Controller('emergency-contacts')
 @UseGuards(JwtAuthGuard)
 export class EmergencyContactsController {
   constructor(
     private readonly emergencyContactsService: EmergencyContactsService,
-  ) {}
+  ) { }
 
   @Get(':userId')
   async findByUserId(@Param('userId') userId: string) {
@@ -25,13 +26,7 @@ export class EmergencyContactsController {
   @Post()
   async createOrUpdate(
     @Body()
-    body: {
-      userId: number;
-      bloodType?: string;
-      emergencyPhone?: string;
-      emergencyContactName?: string;
-      allergies?: string;
-    },
+    body: CreateEmergencyContactDto,
   ) {
     return this.emergencyContactsService.createOrUpdate(body);
   }

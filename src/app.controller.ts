@@ -9,6 +9,7 @@ import { Roles } from 'decorators';
 import { AppService } from './app.service';
 import { ERoles, PassportRequest } from 'types';
 import { LicenseDataService } from './license-data/license-data.service';
+import { PilotsService } from './pilots/pilots.service';
 
 @Controller()
 export class AppController {
@@ -17,12 +18,8 @@ export class AppController {
     private readonly configService: ConfigService,
     private readonly userService: AppService,
     private readonly licenseDataService: LicenseDataService,
+    private readonly pilotsService: PilotsService,
   ) { }
-
-  @Get()
-  getHello(): string {
-    return this.userService.getHello();
-  }
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -43,7 +40,6 @@ export class AppController {
   async getProfile(@Req() req: PassportRequest, @Res() res: Response) {
     const userRole = (req.user.role || '').trim().toLowerCase();
     const userId = req.user.id;
-    console.log(`DEBUG: getProfile userRole: '${userRole}'`);
 
     const pages = {
       datapanel: { label: 'Painel de dados', route: 'datapanel' },
@@ -71,16 +67,15 @@ export class AppController {
         pages.status,
         pages.datapanel,
         pages.pilotsDetails,
-        pages.emergencyContact,
-        pages.editProfile,
-        pages.licenseData,
       ],
     };
 
     const response = allowedPages[userRole] || [];
     const warnings: string[] = [];
+    let pilotInfo = null;
 
     if (userRole === ERoles.PILOTO) {
+      pilotInfo = await this.pilotsService.getPilotByUserId(userId);
       const license = await this.licenseDataService.findByUserId(userId);
       if (license) {
         const today = new Date();
@@ -106,12 +101,11 @@ export class AppController {
       }
     }
 
-    res.send({ routes: response, warnings });
-  }
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ERoles.ADMIN, ERoles.FISCAL, ERoles.PILOTO)
-  @Get('me')
-  getMe(@Req() req: PassportRequest) {
-    return req.user;
+    res.send({
+      routes: response,
+      warnings,
+      user: req.user,
+      pilotInfo,
+    });
   }
 }

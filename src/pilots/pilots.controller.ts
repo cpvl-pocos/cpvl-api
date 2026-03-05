@@ -18,12 +18,13 @@ import { Response } from 'express';
 import { PilotsService } from './pilots.service';
 import { ERoles, PassportRequest } from '../types';
 import { Pilots } from 'models';
+import { UpdatePilotProfileDto } from './dto/update-pilot-profile.dto';
 
 @Controller({
   path: 'pilots',
 })
 export class PilotsController {
-  constructor(private pilotsService: PilotsService) {}
+  constructor(private pilotsService: PilotsService) { }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -263,12 +264,7 @@ export class PilotsController {
   async updateMyProfile(
     @Req() req: PassportRequest,
     @Body()
-    profileData: {
-      name?: string;
-      cellphone?: string;
-      email?: string;
-      photoUrl?: string;
-    },
+    profileData: UpdatePilotProfileDto,
     @Res() res: Response,
   ) {
     try {

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Pilots, PaymentMonthly, User, EmergencyContact } from 'models';
+import { Pilots, PaymentMonthly, User, EmergencyContact, LicenseData } from 'models';
 import { Op, fn, col, where as seqWhere } from 'sequelize';
 
 export interface PilotStatusData {
@@ -281,23 +281,40 @@ export class PilotsService {
 
   async getPilotByUserId(userId: number) {
     try {
-      let pilot: Pilots;
-      if (!isNaN(Number(userId))) {
-        pilot = await Pilots.findOne({ where: { userId: userId } });
-      }
+      const pilot = await Pilots.findOne({
+        where: { userId },
+        include: [
+          {
+            model: PaymentMonthly,
+            as: 'paymentMonthlies',
+            required: false,
+          },
+          {
+            model: EmergencyContact,
+            as: 'emergencyContact',
+            required: false,
+          },
+          {
+            model: LicenseData,
+            as: 'licenseData',
+            required: false,
+          },
+        ],
+        order: [
+          [{ model: PaymentMonthly, as: 'paymentMonthlies' }, 'ref_year', 'DESC'],
+          [{ model: PaymentMonthly, as: 'paymentMonthlies' }, 'ref_month', 'DESC'],
+        ],
+      });
+
       if (!pilot) {
-        pilot = await Pilots.findOne({
-          where: { userId: userId },
-        });
-      }
-      if (!pilot) {
-        throw new NotFoundException(`
-          Piloto com identificador ${userId} não encontrado`);
+        throw new NotFoundException(
+          `Piloto com identificador ${userId} não encontrado`,
+        );
       }
       return pilot;
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw error; // Re-lança a exceção NotFoundException
+        throw error;
       }
       throw new Error(`Erro ao buscar piloto: ${error.message}`);
     }
