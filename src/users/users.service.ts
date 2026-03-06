@@ -34,7 +34,7 @@ export class UsersService {
   }): Promise<User | undefined> {
     console.log(`🔍 [UsersService] Procurando usuário por: "${username}"`);
 
-    // Tenta pelo username
+    // Tenta pelo username (exato)
     const user = await this.userModel.findOne({
       where: {
         username,
@@ -44,6 +44,18 @@ export class UsersService {
     if (user) {
       console.log(`✅ [UsersService] Usuário encontrado por username: ${user.username}`);
       return user;
+    }
+
+    // Tenta pelo username (lowercase) para garantir
+    const userLower = await this.userModel.findOne({
+      where: {
+        username: username.toLowerCase(),
+      },
+    });
+
+    if (userLower) {
+      console.log(`✅ [UsersService] Usuário encontrado por username (lowercase): ${userLower.username}`);
+      return userLower;
     }
 
     // Se não encontrou pelo username, tenta pelo e-mail na tabela de pilotos
@@ -60,6 +72,15 @@ export class UsersService {
     }
 
     console.log(`❌ [UsersService] Nenhum usuário encontrado para: "${username}"`);
+    return undefined;
+  }
+
+  async findById(id: number): Promise<User | undefined> {
+    console.log(`🔍 [UsersService] Procurando usuário por ID: ${id}`);
+    const user = await this.userModel.findByPk(id);
+    if (user) {
+      return user;
+    }
     return undefined;
   }
 
