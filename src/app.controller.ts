@@ -31,7 +31,7 @@ export class AppController {
       secure: true,
       sameSite: 'none',
     });
-    res.send({ status: 'ok' });
+    res.send({ status: 'ok', token });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
