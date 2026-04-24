@@ -1,15 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter;
-
-  private readonly MAIL_HOST = 'smtp.ethereal.email';
-  private readonly MAIL_PORT = 587;
-  private readonly MAIL_USER = 'xavier98@ethereal.email';
-  private readonly MAIL_PASS = 'pYzyebxYSb3uCUqY2s';
 
   constructor(private configService: ConfigService) {
     const host = this.configService.get<string>('MAIL_HOST');
@@ -18,30 +14,21 @@ export class MailService {
     const pass = this.configService.get<string>('MAIL_PASS');
     const secureEnv = this.configService.get<string>('MAIL_SECURE');
 
-    // Se houver host configurado, usa as envs, senão cai no fallback da Ethereal
     if (host) {
-      console.log(`📧 [MAIL] Configurando SMTP real: ${host}:${port}`);
+      this.logger.log(`Configurando SMTP: ${host}:${port}`);
       this.transporter = nodemailer.createTransport({
         host,
         port: port || 587,
         secure: secureEnv === 'true' || port === 465,
-        auth: {
-          user,
-          pass,
-        },
+        auth: { user, pass },
       });
     } else {
-      console.warn(
-        '⚠️ [MAIL] SMTP não configurado no .env. Usando fallback Ethereal (Apenas Testes).',
+      this.logger.warn(
+        'SMTP não configurado no .env. Emails serão logados mas não enviados.',
       );
+      // Create a null transport that logs instead of sending
       this.transporter = nodemailer.createTransport({
-        host: this.MAIL_HOST,
-        port: this.MAIL_PORT,
-        secure: false,
-        auth: {
-          user: this.MAIL_USER,
-          pass: this.MAIL_PASS,
-        },
+        jsonTransport: true,
       });
     }
   }
@@ -67,11 +54,10 @@ export class MailService {
     };
 
     try {
-      console.log(`📤 Enviando e-mail de aprovação para: ${email}`);
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('✅ E-mail enviado:', info.messageId);
+      this.logger.log(`E-mail de aprovação enviado para: ${email}`);
     } catch (error) {
-      console.error('❌ Erro ao enviar e-mail:', error);
+      this.logger.error(`Erro ao enviar e-mail de aprovação: ${error.message}`);
     }
   }
 
@@ -80,9 +66,7 @@ export class MailService {
       this.configService.get<string>('FRONT_URL') || 'http://localhost:3000';
     const recoveryUrl = `${frontUrl}/newpassword?token=${token}`;
 
-    console.log('---------------------------------------------------------');
-    console.log('🔑 [RECOVERY LINK]:', recoveryUrl);
-    console.log('---------------------------------------------------------');
+    this.logger.log(`Recovery link gerado para: ${to}`);
 
     const mailOptions = {
       from: '"CPVL" <noreply@cpvl.com.br>',
@@ -104,22 +88,11 @@ export class MailService {
     };
 
     try {
-      // Verifica se existe configuração mínima de SMTP
-      const host = this.configService.get<string>('MAIL_HOST', this.MAIL_HOST);
-      if (!host) {
-        console.warn(
-          '⚠️ SMTP não configurado. O link de recuperação acima deve ser usado manualmente.',
-        );
-        return;
-      }
-
-      console.log(`📤 Enviando e-mail de recuperação para: ${to}`);
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('✅ E-mail de recuperação enviado:', info.messageId);
+      this.logger.log(`E-mail de recuperação enviado para: ${to}`);
     } catch (error) {
-      console.error('❌ Erro ao enviar e-mail de recuperação:', error.message);
-      console.warn(
-        '⚠️ Falha no envio de e-mail. Use o link logado no console acima.',
+      this.logger.warn(
+        `Falha no envio de e-mail de recuperação: ${error.message}`,
       );
     }
   }
@@ -173,12 +146,11 @@ export class MailService {
     };
 
     try {
-      console.log(`📤 Enviando recibo de pagamento para: ${to}`);
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Recibo enviado:', info.messageId);
+      this.logger.log(`Recibo de pagamento enviado para: ${to}`);
       return true;
     } catch (error) {
-      console.error('❌ Erro ao enviar recibo:', error);
+      this.logger.error(`Erro ao enviar recibo: ${error.message}`);
       throw error;
     }
   }

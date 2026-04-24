@@ -1,4 +1,4 @@
-import { Controller, Req, Res, Post, UseGuards, Get } from '@nestjs/common';
+import { Controller, Req, Res, Post, UseGuards, Get, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { LocalAuthGuard } from './auth/guards/auth.local-auth.guard';
 import { AuthService } from './auth/auth.service';
@@ -6,20 +6,20 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
 import { RolesGuard } from 'auth/guards/roles.guard';
 import { Roles } from 'decorators';
-import { AppService } from './app.service';
 import { ERoles, PassportRequest } from 'types';
 import { LicenseDataService } from './license-data/license-data.service';
 import { PilotsService } from './pilots/pilots.service';
 
 @Controller()
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-    private readonly userService: AppService,
     private readonly licenseDataService: LicenseDataService,
     private readonly pilotsService: PilotsService,
-  ) { }
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -37,7 +37,7 @@ export class AppController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ERoles.ADMIN, ERoles.FISCAL, ERoles.PILOTO)
   @Get('profile')
-  async getProfile(@Req() req: PassportRequest, @Res() res: Response) {
+  async getProfile(@Req() req: PassportRequest) {
     const userRole = (req.user.role || '').trim().toLowerCase();
     const userId = req.user.id;
 
@@ -70,42 +70,40 @@ export class AppController {
       ],
     };
 
-    const response = allowedPages[userRole] || [];
+    const routes = allowedPages[userRole] || [];
     const warnings: string[] = [];
     let pilotInfo = null;
 
     if (userRole === ERoles.PILOTO) {
-      pilotInfo = await this.pilotsService.getPilotByUserId(userId);
-      const license = await this.licenseDataService.findByUserId(userId);
+      // Fetch pilot info and license in parallel for faster response
+      const [pilot, license] = await Promise.all([
+        this.pilotsService.getPilotByUserId(userId),
+        this.licenseDataService.findByUserId(userId),
+      ]);
+
+      pilotInfo = pilot;
+
       if (license) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const EXPIRY_WARNING_DAYS = 30;
 
-        if (license.cbvlExpiration) {
-          const cbvlDate = new Date(license.cbvlExpiration);
-          const diffTime = cbvlDate.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays >= 0 && diffDays <= 30) {
-            warnings.push(`Seu documento CBVL vencerá em ${diffDays} dias.`);
+        const checkExpiration = (date: Date | null, docName: string) => {
+          if (!date) return;
+          const expDate = new Date(date);
+          const diffDays = Math.ceil(
+            (expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          if (diffDays >= 0 && diffDays <= EXPIRY_WARNING_DAYS) {
+            warnings.push(`Seu documento ${docName} vencerá em ${diffDays} dias.`);
           }
-        }
+        };
 
-        if (license.anacExpiration) {
-          const anacDate = new Date(license.anacExpiration);
-          const diffTime = anacDate.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays >= 0 && diffDays <= 30) {
-            warnings.push(`Seu documento ANAC vencerá em ${diffDays} dias.`);
-          }
-        }
+        checkExpiration(license.cbvlExpiration, 'CBVL');
+        checkExpiration(license.anacExpiration, 'ANAC');
       }
     }
 
-    res.send({
-      routes: response,
-      warnings,
-      user: req.user,
-      pilotInfo,
-    });
+    return { routes, warnings, user: req.user, pilotInfo };
   }
 }

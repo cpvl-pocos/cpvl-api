@@ -2,16 +2,16 @@ import { Module } from '@nestjs/common';
 import { PilotsController } from './pilots.controller';
 import { PilotsService } from './pilots.service';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Pilots, User, EmergencyContact } from 'models';
+import { Pilots, User, EmergencyContact, PaymentMonthly } from 'models';
 import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([Pilots, User, EmergencyContact]),
+    SequelizeModule.forFeature([Pilots, User, EmergencyContact, PaymentMonthly]),
     MailModule,
   ],
   controllers: [PilotsController],
   providers: [PilotsService],
   exports: [PilotsService],
 })
-export class PilotsModule { }
+export class PilotsModule {}

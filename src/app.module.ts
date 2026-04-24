@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PilotsModule } from './pilots/pilots.module';
 import { UsersModule } from 'users/users.module';
@@ -22,25 +21,28 @@ import LicenseData from './models/licenseData.model';
       envFilePath: ['.env', 'apps/cpvl-api/.env'],
     }),
     SequelizeModule.forRootAsync({
-      useFactory: async () => ({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
         dialect: 'mysql',
-        host: process.env.DB_HOST,
-        port: parseInt(process.env.DB_PORT, 10),
-        username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
+        host: configService.get<string>('DB_HOST'),
+        port: parseInt(configService.get<string>('DB_PORT'), 10),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
         models: [User, Pilot, PaymentMonthly, EmergencyContact, LicenseData],
         autoLoadModels: true,
-        synchronize: true,
+        synchronize: false,
+        pool: {
+          max: 10,
+          min: 2,
+          acquire: 30000,
+          idle: 10000,
+        },
+        logging: configService.get<string>('NODE_ENV') === 'development'
+          ? console.log
+          : false,
       }),
     }),
-    SequelizeModule.forFeature([
-      User,
-      Pilot,
-      PaymentMonthly,
-      EmergencyContact,
-      LicenseData,
-    ]),
     AuthModule,
     PilotsModule,
     UsersModule,
@@ -49,6 +51,5 @@ import LicenseData from './models/licenseData.model';
     LicenseDataModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

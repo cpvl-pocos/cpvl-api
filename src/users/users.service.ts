@@ -3,90 +3,73 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Pilots, User } from '../models';
 import * as bcrypt from 'bcrypt';
-import { UniqueConstraintError } from 'sequelize';
+import { Op, UniqueConstraintError } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { MailService } from '../mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectModel(User) private readonly userModel: typeof User,
     @InjectModel(Pilots) private readonly pilotModel: typeof Pilots,
     private readonly sequelize: Sequelize,
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async allUsers(): Promise<User[]> {
     return this.userModel.findAll();
   }
 
+  /**
+   * Find user by username or email — single optimized query with OR clause
+   * instead of 3 sequential queries.
+   */
   async findUser({
     username,
   }: {
     username: string;
   }): Promise<User | undefined> {
-    console.log(`🔍 [UsersService] Procurando usuário por: "${username}"`);
+    const normalizedInput = username.trim().toLowerCase();
 
-    // Tenta pelo username (exato)
+    // Single query: try username (exact or lowercase) first
     const user = await this.userModel.findOne({
       where: {
-        username,
+        [Op.or]: [
+          { username },
+          { username: normalizedInput },
+        ],
       },
     });
 
     if (user) {
-      console.log(`✅ [UsersService] Usuário encontrado por username: ${user.username}`);
       return user;
     }
 
-    // Tenta pelo username (lowercase) para garantir
-    const userLower = await this.userModel.findOne({
-      where: {
-        username: username.toLowerCase(),
-      },
-    });
-
-    if (userLower) {
-      console.log(`✅ [UsersService] Usuário encontrado por username (lowercase): ${userLower.username}`);
-      return userLower;
-    }
-
-    // Se não encontrou pelo username, tenta pelo e-mail na tabela de pilotos
-    console.log(`ℹ️ [UsersService] Username não encontrado, tentando por e-mail na tabela de pilotos...`);
-
+    // Fallback: try by pilot email (single query)
     const pilot = await this.pilotModel.findOne({
-      where: { email: username.toLowerCase().trim() },
+      where: { email: normalizedInput },
       include: [User],
     });
 
-    if (pilot?.user) {
-      console.log(`✅ [UsersService] Usuário encontrado via e-mail do piloto: ${pilot.email} (Username: ${pilot.user.username})`);
-      return pilot.user;
-    }
-
-    console.log(`❌ [UsersService] Nenhum usuário encontrado para: "${username}"`);
-    return undefined;
+    return pilot?.user ?? undefined;
   }
 
   async findById(id: number): Promise<User | undefined> {
-    console.log(`🔍 [UsersService] Procurando usuário por ID: ${id}`);
     const user = await this.userModel.findByPk(id);
-    if (user) {
-      return user;
-    }
-    return undefined;
+    return user ?? undefined;
   }
 
   async addUser(info: any) {
-    console.log('📥 [SERVICE] Recebido no addUser:', info);
-
     if (!info || typeof info !== 'object') {
       throw new BadRequestException('Body inválido ou ausente.');
     }
@@ -114,6 +97,7 @@ export class UsersService {
     const agreeRI = !!info.agreeRI;
     const agreeLGPD = !!info.agreeLGPD;
 
+    // Check all uniqueness constraints in parallel
     const [existingUsername, existingCpf, existingEmail, existingName] =
       await Promise.all([
         this.userModel.findOne({ where: { username } }),
@@ -123,7 +107,7 @@ export class UsersService {
       ]);
 
     const genericDuplicateMsg =
-      'já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha”.';
+      'já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha".';
 
     if (existingUsername)
       throw new ConflictException(`E-MAIL de usuário ${genericDuplicateMsg}`);
@@ -162,42 +146,32 @@ export class UsersService {
           { transaction: t },
         );
 
-        console.log('✅ [SERVICE] Sucesso na transaction.');
-
-        return {
-          user,
-          pilot,
-        };
+        return { user, pilot };
       });
 
-      console.log(
-        '⬅️ [SERVICE] Retornando resultado para o controller:',
-        result,
-      );
-
+      this.logger.log(`Usuário criado com sucesso: ${username}`);
       return result;
     } catch (err: any) {
-      console.error('❌ [SERVICE] ERRO NA TRANSACTION:', err);
-
       if (err instanceof UniqueConstraintError) {
         const fields = err.fields ?? {};
         if (fields.username)
           throw new ConflictException(
-            'E-MAIL já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha”.',
+            'E-MAIL já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha".',
           );
         if (fields.cpf)
           throw new ConflictException(
-            'CPF já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha”.',
+            'CPF já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha".',
           );
         if (fields.email)
           throw new ConflictException(
-            'E-mail já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha”.',
+            'E-mail já cadastrado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha".',
           );
         throw new ConflictException(
-          'Registro duplicado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha”.',
+          'Registro duplicado. Na tela de LOGIN, digite seu E-MAIL e click em "Nova senha".',
         );
       }
 
+      this.logger.error(`Erro ao criar usuário: ${err.message}`, err.stack);
       throw new InternalServerErrorException(
         'Erro ao criar usuário: ' + (err.message ?? String(err)),
       );
@@ -239,6 +213,9 @@ export class UsersService {
     } catch (err) {
       if (err.name === 'TokenExpiredError') {
         throw new BadRequestException('O link de recuperação expirou.');
+      }
+      if (err instanceof NotFoundException) {
+        throw err;
       }
       throw new BadRequestException('Token de recuperação inválido.');
     }
