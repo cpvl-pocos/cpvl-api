@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { RolesGuard } from 'auth/guards/roles.guard';
 import { Roles } from 'decorators';
 import { ERoles, PassportRequest } from 'types';
-import { LicenseDataService } from './license-data/license-data.service';
 import { PilotsService } from './pilots/pilots.service';
 
 @Controller()
@@ -17,7 +16,6 @@ export class AppController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-    private readonly licenseDataService: LicenseDataService,
     private readonly pilotsService: PilotsService,
   ) {}
 
@@ -75,11 +73,9 @@ export class AppController {
     let pilotInfo = null;
 
     if (userRole === ERoles.PILOTO) {
-      // Fetch pilot info and license in parallel for faster response
-      const [pilot, license] = await Promise.all([
-        this.pilotsService.getPilotByUserId(userId),
-        this.licenseDataService.findByUserId(userId),
-      ]);
+      // Fetch pilot info (which already eager-loads licenseData)
+      const pilot = await this.pilotsService.getPilotByUserId(userId);
+      const license = pilot?.licenseData ?? null;
 
       pilotInfo = pilot;
 
