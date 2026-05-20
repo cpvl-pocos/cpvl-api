@@ -38,14 +38,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any): Promise<Partial<User>> {
     const {
       username,
-      sub: { id, role },
+      sub,
     } = payload;
 
-    const user = await this.usersService.findById(id);
+    const id = sub?.id;
+    const role = sub?.role;
 
-    if (!user) {
-      console.log(`⚠️ [JwtStrategy] Usuário ID ${id} (de "${username}") não encontrado no banco.`);
-      throw new UnauthorizedException('Usuário não encontrado.');
+    if (!id || !role) {
+      console.log(`⚠️ [JwtStrategy] Payload de JWT inválido ou incompleto:`, payload);
+      throw new UnauthorizedException('Payload do token inválido.');
     }
 
     return { username, id, role };
