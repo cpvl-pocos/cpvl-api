@@ -1,5 +1,5 @@
 // src/payment-monthly/payment-monthly.service.ts
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import PaymentMonthly from '../models/paymentmonthly.model';
 import Pilots from '../models/pilots.model';
@@ -83,6 +83,20 @@ export class PaymentMonthlyService {
   }
 
   async createPaymentMonthly(data: any) {
+    // Check if there are any existing payments with status 'Confirmar' for this user
+    const pendingPayment = await this.paymentMonthlyModel.findOne({
+      where: {
+        userId: Number(data.userId),
+        status: 'Confirmar',
+      },
+    });
+
+    if (pendingPayment) {
+      throw new BadRequestException(
+        'Você já possui um pagamento aguardando confirmação.',
+      );
+    }
+
     const amountMonthly = 50;
     let totalAmount = 0;
     let numberOfMonths = 1;
