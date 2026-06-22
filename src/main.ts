@@ -10,26 +10,26 @@ async function bootstrap() {
   app.use(json({ limit: '5mb' }));
   app.use(urlencoded({ limit: '5mb', extended: true }));
   app.enableCors(
-    {
-      credentials: true,
-      origin: (origin, callback) => {
-        const allowedOrigins = [
-          'https://www.cpvl.esp.br',
-          /^http:\/\/localhost:\d+$/,
-        ];
+    // {
+    //   credentials: true,
+    //   origin: (origin, callback) => {
+    //     const allowedOrigins = [
+    //       'https://www.cpvl.esp.br',
+    //       /^http:\/\/localhost:\d+$/,
+    //     ];
 
-        if (
-          !origin ||
-          allowedOrigins.some((pattern) =>
-            pattern instanceof RegExp ? pattern.test(origin) : pattern === origin,
-          )
-        ) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
-    }
+    //     if (
+    //       !origin ||
+    //       allowedOrigins.some((pattern) =>
+    //         pattern instanceof RegExp ? pattern.test(origin) : pattern === origin,
+    //       )
+    //     ) {
+    //       callback(null, true);
+    //     } else {
+    //       callback(new Error('Not allowed by CORS'));
+    //     }
+    //   },
+    // }
   );
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
