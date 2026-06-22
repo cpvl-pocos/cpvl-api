@@ -13,12 +13,16 @@ async function bootstrap() {
     credentials: true,
     origin: (origin, callback) => {
       const allowedOrigins = [
+        'https://powderblue-crab-369130.hostingersite.com',
         /^http:\/\/localhost:\d+$/,
-        /^https:\/\/cpvl-spa\.vercel\.app$/,
-        /^https:\/\/cpvl-spa-.*\.vercel\.app$/, // Vercel previews
       ];
 
-      if (!origin || allowedOrigins.some((regex) => regex.test(origin))) {
+      if (
+        !origin ||
+        allowedOrigins.some((pattern) =>
+          pattern instanceof RegExp ? pattern.test(origin) : pattern === origin,
+        )
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
