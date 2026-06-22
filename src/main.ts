@@ -14,7 +14,7 @@ async function bootstrap() {
       credentials: true,
       origin: (origin, callback) => {
         const allowedOrigins = [
-          'https://cpvl.esp.br',
+          'https://www.cpvl.esp.br',
           /^http:\/\/localhost:\d+$/,
         ];
 
