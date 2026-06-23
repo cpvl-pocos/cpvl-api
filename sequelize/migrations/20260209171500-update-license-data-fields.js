@@ -3,16 +3,22 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Rename column
-    await queryInterface.renameColumn('license_data', 'cbvl_expiration', 'cbvlExpiration');
+    try {
+      // Rename column
+      await queryInterface.renameColumn('license_data', 'cbvl_expiration', 'cbvlExpiration');
+    } catch (e) {
+      console.log('cbvl_expiration already renamed, skipping...');
+    }
 
-    // Change pilotLevel to ENUM
-    // Note: In some databases (like MySQL), changing type to ENUM might require specific handling if data exists,
-    // but since this is a new table and we are in early development, a straightforward change should work.
-    await queryInterface.changeColumn('license_data', 'pilotLevel', {
-      type: Sequelize.ENUM('I', 'II', 'III', 'IV', 'V'),
-      allowNull: true,
-    });
+    try {
+      // Change pilotLevel to ENUM
+      await queryInterface.changeColumn('license_data', 'pilotLevel', {
+        type: Sequelize.ENUM('I', 'II', 'III', 'IV', 'V'),
+        allowNull: true,
+      });
+    } catch (e) {
+      console.log('pilotLevel already updated, skipping...');
+    }
   },
 
   async down(queryInterface, Sequelize) {

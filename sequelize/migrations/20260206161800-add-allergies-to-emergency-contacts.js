@@ -3,10 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('emergency_contacts', 'allergies', {
-      type: Sequelize.TEXT,
-      allowNull: true,
-    });
+    try {
+      await queryInterface.addColumn('emergency_contacts', 'allergies', {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      });
+    } catch (e) {
+      console.log('allergies column already exists, skipping...');
+    }
   },
 
   async down(queryInterface, Sequelize) {

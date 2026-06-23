@@ -49,7 +49,7 @@ class PaymentMonthly extends Model<PaymentMonthly> {
   amount: number;
 
   @Column({
-    type: DataType.ENUM('mensal', 'trimestral', 'semestral', 'anual'),
+    type: DataType.ENUM('mensal', 'bimestral', 'trimestral', 'semestral', 'anual'),
     allowNull: true,
   })
   type: string;

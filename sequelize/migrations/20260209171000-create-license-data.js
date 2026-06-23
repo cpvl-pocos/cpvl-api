@@ -3,6 +3,11 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    const tables = await queryInterface.showAllTables();
+    if (tables.includes('license_data')) {
+      console.log('license_data table already exists, skipping...');
+      return;
+    }
     await queryInterface.createTable('license_data', {
       id: {
         type: Sequelize.INTEGER,

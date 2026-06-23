@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import PaymentMonthly from '../models/paymentmonthly.model';
 import Pilots from '../models/pilots.model';
 import { MailService } from '../mail/mail.service';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class PaymentMonthlyService {
@@ -52,6 +53,8 @@ export class PaymentMonthlyService {
     switch (paymentType) {
       case 'mensal':
         return amountMonthly;
+      case 'bimestral':
+        return amountMonthly * 2;
       case 'trimestral':
         return amountMonthly * 3;
       case 'semestral':
@@ -83,17 +86,47 @@ export class PaymentMonthlyService {
   }
 
   async createPaymentMonthly(data: any) {
-    // Check if there are any existing payments with status 'Confirmar' for this user
-    const pendingPayment = await this.paymentMonthlyModel.findOne({
+    // Determine maximum allowed pending payments of the same type
+    const maxPending =
+      data.type === 'mensal'
+        ? 1
+        : data.type === 'bimestral'
+        ? 2
+        : data.type === 'trimestral'
+        ? 3
+        : data.type === 'semestral'
+        ? 6
+        : data.type === 'anual'
+        ? 12
+        : 1;
+
+    // Check if there is any pending payment of a DIFFERENT type
+    const pendingDifferentType = await this.paymentMonthlyModel.findOne({
       where: {
         userId: Number(data.userId),
         status: 'Confirmar',
+        type: { [Op.ne]: data.type },
       },
     });
 
-    if (pendingPayment) {
+    if (pendingDifferentType) {
       throw new BadRequestException(
-        'Você já possui um pagamento aguardando confirmação.',
+        `Você já possui um pagamento do tipo ${pendingDifferentType.type} aguardando confirmação.`,
+      );
+    }
+
+    // Count pending payments of the SAME type
+    const pendingSameTypeCount = await this.paymentMonthlyModel.count({
+      where: {
+        userId: Number(data.userId),
+        status: 'Confirmar',
+        type: data.type,
+      },
+    });
+
+    if (pendingSameTypeCount >= maxPending) {
+      throw new BadRequestException(
+        `Você já possui o limite de pagamentos do tipo ${data.type} aguardando confirmação.`,
       );
     }
 
@@ -105,6 +138,10 @@ export class PaymentMonthlyService {
       case 'mensal':
         totalAmount = amountMonthly;
         numberOfMonths = 1;
+        break;
+      case 'bimestral':
+        totalAmount = amountMonthly * 2;
+        numberOfMonths = 2;
         break;
       case 'trimestral':
         totalAmount = amountMonthly * 3;

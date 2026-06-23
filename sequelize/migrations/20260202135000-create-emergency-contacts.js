@@ -3,6 +3,12 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Check if table already exists before creating
+    const tables = await queryInterface.showAllTables();
+    if (tables.includes('emergency_contacts')) {
+      console.log('emergency_contacts table already exists, skipping...');
+      return;
+    }
     await queryInterface.createTable('emergency_contacts', {
       id: {
         type: Sequelize.INTEGER,
@@ -20,15 +26,19 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      bloodType: {
-        type: Sequelize.ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
-        allowNull: true,
-      },
-      emergencyPhone: {
+      contactName: {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      emergencyContactName: {
+      contactPhone: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      bloodType: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      healthInsurance: {
         type: Sequelize.STRING,
         allowNull: true,
       },
@@ -40,9 +50,7 @@ module.exports = {
       updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.literal(
-          'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-        ),
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
       },
     });
   },

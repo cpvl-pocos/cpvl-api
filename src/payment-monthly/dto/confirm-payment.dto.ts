@@ -62,7 +62,7 @@ export class CreatePaymentMonthlyDto {
 
   @IsNotEmpty()
   @IsString()
-  @IsEnum(['mensal', 'trimestral', 'semestral', 'anual'])
+  @IsEnum(['mensal', 'bimestral', 'trimestral', 'semestral', 'anual'])
   type: string;
 
   @IsNotEmpty()
