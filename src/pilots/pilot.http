@@ -1,4 +1,4 @@
-GET http://localhost:3000/pilots/status-list
+GET http://localhost:8000/pilots/status-list
 
 ###
 ### Buscar um pagamento mensal por ID

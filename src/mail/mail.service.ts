@@ -38,7 +38,7 @@ export class MailService {
 
   async sendApprovalEmail(email: string, firstName: string, username: string) {
     const mailOptions = {
-      from: `"CPVL" <${this.defaultSender}>`,
+      from: `"CPVL - Clube Poçoscaldense de Vôo Livre" <${this.defaultSender}>`,
       to: `${email}`,
       subject: 'Seu cadastro no CPVL foi aprovado!',
       text: `Olá ${firstName}, seu cadastro foi aprovado! Você já pode logar no sistema. Lembre-se que seu usuário é a primeira parte do seu email: ${username}`,
@@ -66,13 +66,13 @@ export class MailService {
 
   async sendPasswordRecoveryLink(to: string, firstName: string, token: string) {
     const frontUrl =
-      this.configService.get<string>('FRONT_URL') || 'http://localhost:3000';
+      this.configService.get<string>('FRONT_URL') || 'http://localhost:8000';
     const recoveryUrl = `${frontUrl}/newpassword?token=${token}`;
 
     this.logger.log(`Recovery link gerado para: ${to}`);
 
     const mailOptions = {
-      from: `"CPVL" <${this.defaultSender}>`,
+      from: `"CPVL - Clube Poçoscaldense de Vôo Livre" <${this.defaultSender}>`,
       to,
       subject: 'Recuperação de Senha - CPVL',
       text: `Olá ${firstName}, clique no link para resetar sua senha: ${recoveryUrl}`,
@@ -112,9 +112,8 @@ export class MailService {
     const mailOptions = {
       from: `"CPVL Tesouraria" <${this.defaultSender}>`,
       to,
-      subject: `Recibo de Pagamento - ${
-        paymentType.charAt(0).toUpperCase() + paymentType.slice(1)
-      } ${year}`,
+      subject: `Recibo de Pagamento - ${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)
+        } ${year}`,
       html: `
         <div style="font-family: serif; color: #333; padding: 20px;">
           <h2 style="text-align: center;">RECIBO</h2>
@@ -125,13 +124,13 @@ export class MailService {
           
           <p style="text-align: justify; line-height: 1.8; margin: 20px 0;">
             Recebemos no dia <strong>${new Date(paymentDate).toLocaleDateString(
-              'pt-BR',
-            )}</strong> do
+        'pt-BR',
+      )}</strong> do
             piloto <strong>${pilotName}</strong>, CPF nº <strong>${pilotCpf}</strong>, 
             o pagamento no valor de <strong>R$ ${amount.toFixed(2)}</strong>, 
             referente à <strong>${this.getPaymentTypeLabel(
-              paymentType,
-            )}</strong> do ano de 
+        paymentType,
+      )}</strong> do ano de 
             <strong>${year}</strong>.
           </p>
           
