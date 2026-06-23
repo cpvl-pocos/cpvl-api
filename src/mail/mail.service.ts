@@ -6,6 +6,7 @@ import * as nodemailer from 'nodemailer';
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter;
+  private readonly defaultSender: string;
 
   constructor(private configService: ConfigService) {
     const host = this.configService.get<string>('MAIL_HOST');
@@ -13,6 +14,8 @@ export class MailService {
     const user = this.configService.get<string>('MAIL_USER');
     const pass = this.configService.get<string>('MAIL_PASS');
     const secureEnv = this.configService.get<string>('MAIL_SECURE');
+
+    this.defaultSender = user || 'noreply@cpvl.com.br';
 
     if (host) {
       this.logger.log(`Configurando SMTP: ${host}:${port}`);
@@ -35,7 +38,7 @@ export class MailService {
 
   async sendApprovalEmail(email: string, firstName: string, username: string) {
     const mailOptions = {
-      from: '"CPVL" <noreply@cpvl.com.br>',
+      from: `"CPVL" <${this.defaultSender}>`,
       to: `${email}`,
       subject: 'Seu cadastro no CPVL foi aprovado!',
       text: `Olá ${firstName}, seu cadastro foi aprovado! Você já pode logar no sistema. Lembre-se que seu usuário é a primeira parte do seu email: ${username}`,
@@ -69,7 +72,7 @@ export class MailService {
     this.logger.log(`Recovery link gerado para: ${to}`);
 
     const mailOptions = {
-      from: '"CPVL" <noreply@cpvl.com.br>',
+      from: `"CPVL" <${this.defaultSender}>`,
       to,
       subject: 'Recuperação de Senha - CPVL',
       text: `Olá ${firstName}, clique no link para resetar sua senha: ${recoveryUrl}`,
@@ -107,7 +110,7 @@ export class MailService {
     year: string,
   ) {
     const mailOptions = {
-      from: '"CPVL Tesouraria" <noreply@cpvl.com.br>',
+      from: `"CPVL Tesouraria" <${this.defaultSender}>`,
       to,
       subject: `Recibo de Pagamento - ${
         paymentType.charAt(0).toUpperCase() + paymentType.slice(1)
