@@ -49,9 +49,9 @@ export class MailService {
           <p>Você já pode acessar o sistema utilizando suas credenciais.</p>
           <a href="http://www.cpvl.esp.br" target="_blank">www.cpvl.esp.br</a>
           <p><strong>Usuário:</strong> ${username}</p>
-          <p><em>(O usuário é a primeira parte do seu e-mail antes do @)</em></p>
+          <p><em>(O "Usuário", é a primeira parte do seu e-mail, antes do "@")</em></p>
           <br />
-          <p>Atenciosamente,<br />Equipe CPVL</p>
+          <p>Atenciosamente,<br />Diretoria CPVL</p>
         </div>
       `,
     };
@@ -85,7 +85,7 @@ export class MailService {
           <p>O link expira em 15 minutos.</p>
           <p>Se você não solicitou isso, ignore este e-mail.</p>
           <br />
-          <p>Atenciosamente,<br />Equipe CPVL</p>
+          <p>Atenciosamente,<br />Diretoria CPVL</p>
         </div>
       `,
     };
@@ -109,11 +109,15 @@ export class MailService {
     paymentType: string,
     year: string,
   ) {
+    const numericAmount = Number(amount) || 0;
+    const safePaymentType = paymentType ? String(paymentType).toLowerCase() : 'mensal';
+    const capitalizedType =
+      safePaymentType.charAt(0).toUpperCase() + safePaymentType.slice(1);
+
     const mailOptions = {
       from: `"CPVL Tesouraria" <${this.defaultSender}>`,
       to,
-      subject: `Recibo de Pagamento - ${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)
-        } ${year}`,
+      subject: `Recibo de Pagamento - ${capitalizedType} ${year}`,
       html: `
         <div style="font-family: serif; color: #333; padding: 20px;">
           <h2 style="text-align: center;">RECIBO</h2>
@@ -127,9 +131,9 @@ export class MailService {
         'pt-BR',
       )}</strong> do
             piloto <strong>${pilotName}</strong>, CPF nº <strong>${pilotCpf}</strong>, 
-            o pagamento no valor de <strong>R$ ${amount.toFixed(2)}</strong>, 
+            o pagamento no valor de <strong>R$ ${numericAmount.toFixed(2)}</strong>, 
             referente à <strong>${this.getPaymentTypeLabel(
-        paymentType,
+        safePaymentType,
       )}</strong> do ano de 
             <strong>${year}</strong>.
           </p>
