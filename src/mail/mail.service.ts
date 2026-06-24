@@ -164,6 +164,7 @@ export class MailService {
   private getPaymentTypeLabel(type: string): string {
     const typeMap: Record<string, string> = {
       mensal: 'mensalidade',
+      bimestral: 'bimestre',
       trimestral: 'trimestre',
       semestral: 'semestre',
       anual: 'anuidade',
