@@ -114,10 +114,12 @@ export class MailService {
     const capitalizedType =
       safePaymentType.charAt(0).toUpperCase() + safePaymentType.slice(1);
 
+    const monthsRef = this.getMonthsReference(paymentDate, safePaymentType);
+
     const mailOptions = {
       from: `"CPVL Tesouraria" <${this.defaultSender}>`,
       to,
-      subject: `Recibo de Pagamento - ${capitalizedType} ${year}`,
+      subject: `Recibo de Pagamento - ${capitalizedType} ${monthsRef} ${year}`,
       html: `
         <div style="font-family: serif; color: #333; padding: 20px;">
           <h2 style="text-align: center;">RECIBO</h2>
@@ -134,7 +136,7 @@ export class MailService {
             o pagamento no valor de <strong>R$ ${numericAmount.toFixed(2)}</strong>, 
             referente à <strong>${this.getPaymentTypeLabel(
         safePaymentType,
-      )}</strong> do ano de 
+      )}</strong> de <strong>${monthsRef}</strong> de 
             <strong>${year}</strong>.
           </p>
           
@@ -170,5 +172,34 @@ export class MailService {
       anual: 'anuidade',
     };
     return typeMap[type] || type;
+  }
+
+  private getMonthsReference(paymentDate: string, paymentType: string): string {
+    const date = new Date(paymentDate);
+    const monthNames = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+
+    const startMonth = date.getMonth();
+
+    switch (paymentType) {
+      case 'mensal':
+        return monthNames[startMonth];
+      case 'bimestral':
+        return `${monthNames[startMonth]} e ${monthNames[(startMonth + 1) % 12]}`;
+      case 'trimestral':
+        return `${monthNames[startMonth]}, ${monthNames[(startMonth + 1) % 12]} e ${monthNames[(startMonth + 2) % 12]}`;
+      case 'semestral':
+        const months = [];
+        for (let i = 0; i < 6; i++) {
+          months.push(monthNames[(startMonth + i) % 12]);
+        }
+        return months.slice(0, -1).join(', ') + ' e ' + months.slice(-1);
+      case 'anual':
+        return 'todo o ano';
+      default:
+        return monthNames[startMonth];
+    }
   }
 }
