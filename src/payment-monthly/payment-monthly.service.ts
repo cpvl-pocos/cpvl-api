@@ -263,6 +263,24 @@ export class PaymentMonthlyService {
    * Helper: send payment confirmation receipt email.
    * Extracted to avoid code duplication between confirmPayment and confirmPaymentBatch.
    */
+  private getTotalAmount(payment: PaymentMonthly): number {
+    const amountMonthly = 50;
+    switch (payment.type) {
+      case 'mensal':
+        return amountMonthly;
+      case 'bimestral':
+        return amountMonthly * 2;
+      case 'trimestral':
+        return amountMonthly * 3;
+      case 'semestral':
+        return amountMonthly * 6;
+      case 'anual':
+        return amountMonthly * 12;
+      default:
+        return payment.amount;
+    }
+  }
+
   private async sendConfirmationReceipt(
     userId: number,
     payment: PaymentMonthly,
@@ -270,11 +288,12 @@ export class PaymentMonthlyService {
     const pilot = await this.pilotsModel.findOne({ where: { userId } });
 
     if (pilot?.email) {
+      const totalAmount = this.getTotalAmount(payment);
       await this.mailService.sendPaymentReceipt(
         pilot.email,
         `${pilot.firstName} ${pilot.lastName}`,
         pilot.cpf,
-        payment.amount,
+        totalAmount,
         payment.createdAt?.toString() || new Date().toISOString(),
         payment.type,
         String(payment.ref_year),
@@ -300,11 +319,13 @@ export class PaymentMonthlyService {
       throw new NotFoundException('Piloto não encontrado');
     }
 
+    const totalAmount = this.getTotalAmount(payment);
+
     await this.mailService.sendPaymentReceipt(
       email,
       pilotName,
       pilot.cpf,
-      payment.amount,
+      totalAmount,
       payment.createdAt?.toString() || new Date().toISOString(),
       payment.type,
       selectedYear,
